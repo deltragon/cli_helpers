@@ -33,6 +33,23 @@ def test_to_string_non_bytes():
     assert utils.to_string(2.29) == '2.29'
 
 
+def test_truncate_string():
+    """Test string truncate preprocessor."""
+    val = 'x' * 100
+    assert utils.truncate_string(val, 10) == 'xxxxxxx...'
+    
+    val = 'x ' * 100
+    assert utils.truncate_string(val, 10) == 'x x x x...'
+
+    val = 'x' * 100
+    assert utils.truncate_string(val) == 'x' * 100
+
+    val = ['x'] * 100
+    val[20] = '\n'
+    str_val = ''.join(val)
+    assert utils.truncate_string(str_val, 10, skip_multiline_string=True) == str_val
+
+
 def test_intlen_with_decimal():
     """Test that intlen() counts correctly with a decimal place."""
     assert utils.intlen('11.1') == 2

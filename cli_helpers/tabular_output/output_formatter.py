@@ -8,12 +8,13 @@ from cli_helpers.compat import (text_type, binary_type, int_types, float_types,
                                 zip_longest)
 from cli_helpers.utils import unique_items
 from . import (delimited_output_adapter, vertical_table_adapter,
-               tabulate_adapter, terminaltables_adapter)
+               tabulate_adapter, tsv_output_adapter)
 from decimal import Decimal
 
 import itertools
 
 MISSING_VALUE = '<null>'
+MAX_FIELD_WIDTH = 500
 
 TYPES = {
     type(None): 0,
@@ -120,7 +121,7 @@ class TabularOutputFormatter(object):
 
     def format_output(self, data, headers, format_name=None,
                       preprocessors=(), column_types=None, **kwargs):
-        """Format the headers and data using a specific formatter.
+        r"""Format the headers and data using a specific formatter.
 
         *format_name* must be a supported formatter (see
         :attr:`supported_formats`).
@@ -178,7 +179,7 @@ class TabularOutputFormatter(object):
 
 
 def format_output(data, headers, format_name, **kwargs):
-    """Format output using *format_name*.
+    r"""Format output using *format_name*.
 
     This is a wrapper around the :class:`TabularOutputFormatter` class.
 
@@ -198,24 +199,22 @@ for vertical_format in vertical_table_adapter.supported_formats:
     TabularOutputFormatter.register_new_formatter(
         vertical_format, vertical_table_adapter.adapter,
         vertical_table_adapter.preprocessors,
-        {'table_format': vertical_format, 'missing_value': MISSING_VALUE})
+        {'table_format': vertical_format, 'missing_value': MISSING_VALUE, 'max_field_width': None})
 
 for delimited_format in delimited_output_adapter.supported_formats:
     TabularOutputFormatter.register_new_formatter(
         delimited_format, delimited_output_adapter.adapter,
         delimited_output_adapter.preprocessors,
-        {'table_format': delimited_format, 'missing_value': ''})
+        {'table_format': delimited_format, 'missing_value': '', 'max_field_width': None})
 
 for tabulate_format in tabulate_adapter.supported_formats:
     TabularOutputFormatter.register_new_formatter(
         tabulate_format, tabulate_adapter.adapter,
-        tabulate_adapter.preprocessors +
-        (tabulate_adapter.style_output_table(tabulate_format),),
-        {'table_format': tabulate_format, 'missing_value': MISSING_VALUE})
+        tabulate_adapter.get_preprocessors(tabulate_format),
+        {'table_format': tabulate_format, 'missing_value': MISSING_VALUE, 'max_field_width': MAX_FIELD_WIDTH}),
 
-for terminaltables_format in terminaltables_adapter.supported_formats:
+for tsv_format in tsv_output_adapter.supported_formats:
     TabularOutputFormatter.register_new_formatter(
-        terminaltables_format, terminaltables_adapter.adapter,
-        terminaltables_adapter.preprocessors +
-        (terminaltables_adapter.style_output_table(terminaltables_format),),
-        {'table_format': terminaltables_format, 'missing_value': MISSING_VALUE})
+        tsv_format, tsv_output_adapter.adapter,
+        tsv_output_adapter.preprocessors,
+        {'table_format': tsv_format, 'missing_value': '', 'max_field_width': None})

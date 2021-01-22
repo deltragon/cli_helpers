@@ -9,7 +9,7 @@ import pytest
 from cli_helpers.compat import HAS_PYGMENTS
 from cli_helpers.tabular_output.preprocessors import (
     align_decimals, bytes_to_string, convert_to_string, quote_whitespaces,
-    override_missing_value, style_output, format_numbers)
+    override_missing_value, override_tab_value, style_output, format_numbers)
 
 if HAS_PYGMENTS:
     from pygments.style import Style
@@ -38,6 +38,40 @@ def test_override_missing_values():
     results = override_missing_value(data, headers, missing_value='<EMPTY>')
 
     assert expected == (list(results[0]), results[1])
+
+
+@pytest.mark.skipif(not HAS_PYGMENTS, reason='requires the Pygments library')
+def test_override_missing_value_with_style():
+    """Test that *override_missing_value()* styles output."""
+
+    class NullStyle(Style):
+        styles = {
+            Token.Output.Null: '#0f0'
+        }
+
+    headers = ['h1', 'h2']
+    data = [[None, '2'], ['abc', None]]
+
+    expected_headers = ['h1', 'h2']
+    expected_data = [
+        ['\x1b[38;5;10m<null>\x1b[39m', '2'],
+        ['abc', '\x1b[38;5;10m<null>\x1b[39m']
+    ]
+    results = override_missing_value(data, headers, 
+                                     style=NullStyle, missing_value="<null>")
+
+    assert (expected_data, expected_headers) == (list(results[0]), results[1])
+
+
+def test_override_tab_value():
+    """Test the override_tab_value() function."""
+    data = [[1, '\tJohn'], [2, 'Jill']]
+    headers = ['id', 'name']
+    expected = ([[1, '    John'], [2, 'Jill']], ['id', 'name'])
+    results = override_tab_value(data, headers)
+
+    assert expected == (list(results[0]), results[1])
+
 
 def test_bytes_to_string():
     """Test the bytes_to_string() function."""
@@ -143,20 +177,21 @@ def test_style_output():
     class CliStyle(Style):
         default_style = ""
         styles = {
-            Token.Output.Header: 'bold #ansired',
+            Token.Output.Header: 'bold ansibrightred',
             Token.Output.OddRow: 'bg:#eee #111',
             Token.Output.EvenRow: '#0f0'
         }
     headers = ['h1', 'h2']
     data = [['观音', '2'], ['Ποσειδῶν', 'b']]
 
-    expected_headers = ['\x1b[31;01mh1\x1b[39;00m', '\x1b[31;01mh2\x1b[39;00m']
+    expected_headers = ['\x1b[91;01mh1\x1b[39;00m', '\x1b[91;01mh2\x1b[39;00m']
     expected_data = [['\x1b[38;5;233;48;5;7m观音\x1b[39;49m',
                       '\x1b[38;5;233;48;5;7m2\x1b[39;49m'],
                      ['\x1b[38;5;10mΠοσειδῶν\x1b[39m', '\x1b[38;5;10mb\x1b[39m']]
     results = style_output(data, headers, style=CliStyle)
 
     assert (expected_data, expected_headers) == (list(results[0]), results[1])
+
 
 @pytest.mark.skipif(not HAS_PYGMENTS, reason='requires the Pygments library')
 def test_style_output_with_newlines():
@@ -165,14 +200,14 @@ def test_style_output_with_newlines():
     class CliStyle(Style):
         default_style = ""
         styles = {
-            Token.Output.Header: 'bold #ansired',
+            Token.Output.Header: 'bold ansibrightred',
             Token.Output.OddRow: 'bg:#eee #111',
             Token.Output.EvenRow: '#0f0'
         }
     headers = ['h1', 'h2']
     data = [['观音\nLine2', 'Ποσειδῶν']]
 
-    expected_headers = ['\x1b[31;01mh1\x1b[39;00m', '\x1b[31;01mh2\x1b[39;00m']
+    expected_headers = ['\x1b[91;01mh1\x1b[39;00m', '\x1b[91;01mh2\x1b[39;00m']
     expected_data = [
         ['\x1b[38;5;233;48;5;7m观音\x1b[39;49m\n\x1b[38;5;233;48;5;7m'
          'Line2\x1b[39;49m',
@@ -189,14 +224,14 @@ def test_style_output_custom_tokens():
     class CliStyle(Style):
         default_style = ""
         styles = {
-            Token.Results.Headers: 'bold #ansired',
+            Token.Results.Headers: 'bold ansibrightred',
             Token.Results.OddRows: 'bg:#eee #111',
             Token.Results.EvenRows: '#0f0'
         }
     headers = ['h1', 'h2']
     data = [['1', '2'], ['a', 'b']]
 
-    expected_headers = ['\x1b[31;01mh1\x1b[39;00m', '\x1b[31;01mh2\x1b[39;00m']
+    expected_headers = ['\x1b[91;01mh1\x1b[39;00m', '\x1b[91;01mh2\x1b[39;00m']
     expected_data = [['\x1b[38;5;233;48;5;7m1\x1b[39;49m',
                       '\x1b[38;5;233;48;5;7m2\x1b[39;49m'],
                      ['\x1b[38;5;10ma\x1b[39m', '\x1b[38;5;10mb\x1b[39m']]

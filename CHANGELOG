@@ -1,13 +1,57 @@
 Changelog
 =========
 
-Version TBD
+TBD
+---
+
+* Remove dependency on terminaltables
+* Add psql_unicode table format
+
+Version 2.1.0
 -------------
 
-(released on TBD)
+(released on 2020-07-29)
+
+* Speed up output styling of tables.
+
+Version 2.0.1
+-------------
+
+(released on 2020-05-27)
+
+* Fix newline escaping in plain-text formatters (ascii, double, github)
+* Use built-in unittest.mock instead of mock.
+
+Version 2.0.0
+-------------
+
+(released on 2020-05-26)
+
+* Remove Python 2.7 and 3.5.
+* Style config for missing value.
+
+Version 1.2.1
+-------------
+
+(released on 2019-06-09)
+
+* Pin Pygments to >= 2.4.0 for tests.
+* Remove Python 3.4 from tests and Trove classifier.
+* Add an option to skip truncating multi-line strings.
+* When truncating long strings, add ellipsis.
+
+Version 1.2.0
+-------------
+
+(released on 2019-04-05)
 
 * Fix issue with writing non-ASCII characters to config files.
 * Run tests on Python 3.7.
+* Use twine check during packaging tests.
+* Rename old tsv format to csv-tab (because it add quotes), introduce new tsv output adapter.
+* Truncate long fields for tabular display.
+* Return the supported table formats as unicode.
+* Override tab with 4 spaces for terminal tables.
 
 Version 1.1.0
 -------------

@@ -20,23 +20,34 @@ def test_tabulate_wrapper():
     headers = ['letters', 'number']
     output = tabulate_adapter.adapter(iter(data), headers, table_format='psql')
     assert "\n".join(output) == dedent('''\
-        +-----------+----------+
-        | letters   |   number |
-        |-----------+----------|
-        | abc       |        1 |
-        | d         |      456 |
-        +-----------+----------+''')
+        +---------+--------+
+        | letters | number |
+        |---------+--------|
+        | abc     |      1 |
+        | d       |    456 |
+        +---------+--------+''')
+
+    data = [['abc', 1], ['d', 456]]
+    headers = ['letters', 'number']
+    output = tabulate_adapter.adapter(iter(data), headers, table_format='psql_unicode')
+    assert "\n".join(output) == dedent('''\
+        ┌─────────┬────────┐
+        │ letters │ number │
+        ├─────────┼────────┤
+        │ abc     │      1 │
+        │ d       │    456 │
+        └─────────┴────────┘''')
 
     data = [['{1,2,3}', '{{1,2},{3,4}}', '{å,魚,текст}'], ['{}', '<null>', '{<null>}']]
     headers = ['bigint_array', 'nested_numeric_array', '配列']
     output = tabulate_adapter.adapter(iter(data), headers, table_format='psql')
     assert "\n".join(output) == dedent('''\
-        +----------------+------------------------+--------------+
-        | bigint_array   | nested_numeric_array   | 配列         |
-        |----------------+------------------------+--------------|
-        | {1,2,3}        | {{1,2},{3,4}}          | {å,魚,текст} |
-        | {}             | <null>                 | {<null>}     |
-        +----------------+------------------------+--------------+''')
+        +--------------+----------------------+--------------+
+        | bigint_array | nested_numeric_array | 配列         |
+        |--------------+----------------------+--------------|
+        | {1,2,3}      | {{1,2},{3,4}}        | {å,魚,текст} |
+        | {}           | <null>               | {<null>}     |
+        +--------------+----------------------+--------------+''')
 
 
 def test_markup_format():
@@ -63,7 +74,7 @@ def test_style_output_table():
     class CliStyle(Style):
         default_style = ""
         styles = {
-            Token.Output.TableSeparator: '#ansired',
+            Token.Output.TableSeparator: 'ansibrightred',
         }
     headers = ['h1', 'h2']
     data = [['观音', '2'], ['Ποσειδῶν', 'b']]
@@ -71,26 +82,17 @@ def test_style_output_table():
 
     style_output_table(data, headers, style=CliStyle)
     output = tabulate_adapter.adapter(iter(data), headers, table_format='psql')
+    PLUS = '\x1b[91m+\x1b[39m'
+    MINUS = '\x1b[91m-\x1b[39m'
+    PIPE = '\x1b[91m|\x1b[39m'
 
-    assert "\n".join(output) == dedent('''\
-        \x1b[31;01m+\x1b[39;00m''' + (
-          ('\x1b[31;01m-\x1b[39;00m' * 10) +
-          '\x1b[31;01m+\x1b[39;00m' +
-          ('\x1b[31;01m-\x1b[39;00m' * 6)) +
-        '''\x1b[31;01m+\x1b[39;00m
-        \x1b[31;01m|\x1b[39;00m h1       \x1b[31;01m|\x1b[39;00m''' +
-        ''' h2   \x1b[31;01m|\x1b[39;00m
-        ''' + '\x1b[31;01m|\x1b[39;00m' + (
-          ('\x1b[31;01m-\x1b[39;00m' * 10) +
-          '\x1b[31;01m+\x1b[39;00m' +
-          ('\x1b[31;01m-\x1b[39;00m' * 6)) +
-        '''\x1b[31;01m|\x1b[39;00m
-        \x1b[31;01m|\x1b[39;00m 观音     \x1b[31;01m|\x1b[39;00m''' +
-        ''' 2    \x1b[31;01m|\x1b[39;00m
-        \x1b[31;01m|\x1b[39;00m Ποσειδῶν \x1b[31;01m|\x1b[39;00m''' +
-        ''' b    \x1b[31;01m|\x1b[39;00m
-        ''' + '\x1b[31;01m+\x1b[39;00m' + (
-          ('\x1b[31;01m-\x1b[39;00m' * 10) +
-          '\x1b[31;01m+\x1b[39;00m' +
-          ('\x1b[31;01m-\x1b[39;00m' * 6)) +
-        '\x1b[31;01m+\x1b[39;00m')
+    expected = dedent('''\
+        +----------+----+
+        | h1       | h2 |
+        |----------+----|
+        | 观音     | 2  |
+        | Ποσειδῶν | b  |
+        +----------+----+'''
+    ).replace('+', PLUS).replace('-', MINUS).replace('|', PIPE)
+
+    assert "\n".join(output) == expected
